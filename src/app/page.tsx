@@ -1,6 +1,5 @@
 "use client";
-import Image from "next/image";
-import { useState } from "react";
+import { useState, useEffect, useRef } from "react";
 import BarcodeScannerComponent from "react-qr-barcode-scanner";
 import DatePicker from "react-datepicker";
 import "react-datepicker/dist/react-datepicker.css";
@@ -10,8 +9,38 @@ export default function Home() {
   const [addItemState, setAddItemState] = useState(false);
   const [productInfo, setProductInfo] = useState({});
   const [expiryDate, setExpiryDate] = useState(new Date());
+  const [scannedItems, setScannedItems] = useState([]); // Store scanned items
+  const audioRef = useRef(null);
+  const [scanning, setScanning] = useState(true); // To control scanning state
+  const lastScannedRef = useRef(null); // To store the last scanned barcode
+
+  // Load items from local storage on initial render
+  useEffect(() => {
+    const storedItems = JSON.parse(localStorage.getItem("scannedItems")) || [];
+    setScannedItems(storedItems); // Load scanned items into state
+  }, []);
+
+  // Preinitialize audio on user interaction
+  const initializeAudio = () => {
+    if (!audioRef.current) {
+      audioRef.current = new Audio("/beep.mp3");
+      console.log("Audio initialized");
+    }
+  };
+
+  // Play beep sound
+  const playBeep = () => {
+    if (audioRef.current) {
+      audioRef.current.play().catch((error) => {
+        console.error("Error playing beep sound:", error);
+      });
+    } else {
+      console.error("Audio not initialized");
+    }
+  };
 
   const addItem = () => {
+    initializeAudio(); // Ensure audio is initialized when this button is clicked
     setAddItemState(!addItemState);
   };
 
@@ -22,6 +51,7 @@ export default function Home() {
         console.log("API response:", data); // Log the full API response
         if (data.status === 1) {
           setProductInfo(data.product);
+          saveScannedItem({ barcode, product: data.product }); // Save product details
         } else {
           setProductInfo({});
           setData("Product not found");
@@ -33,19 +63,60 @@ export default function Home() {
       });
   };
 
-  const saveItem = () => {
+  const saveScannedItem = (item) => {
+    setScannedItems((prevItems) => {
+      const updatedItems = [...prevItems, item]; // Append the new item ***
+      localStorage.setItem("scannedItems", JSON.stringify(updatedItems)); // Save to localStorage ***
+      return updatedItems; // Return the updated state
+    });
+  };
 
+  const checkoutItem = () => {
+    setScannedItems([]); // Clear the state
+    localStorage.removeItem("scannedItems"); // Clear localStorage
+    setProductInfo({});
+    console.log("All items have been checked out.");
   }
+
+  // Delete a specific item from the list and localStorage
+  const deleteItem = (index) => {
+    setScannedItems((prevItems) => {
+      const updatedItems = prevItems.filter((_, i) => i !== index); // Remove the item at the given index ***
+      localStorage.setItem("scannedItems", JSON.stringify(updatedItems)); // Update localStorage
+      return updatedItems; // Update state
+    });
+  };
+
+  const handleScan = (barcode) => {
+    // Prevent duplicate scans during timeout
+    if (barcode === lastScannedRef.current) {
+      console.log("Duplicate barcode detected, ignoring...");
+      return;
+    }
+
+    lastScannedRef.current = barcode; // Store the scanned barcode
+    setScanning(false); // Disable scanning temporarily
+    setData(barcode);
+    fetchProductDetails(barcode);
+    playBeep(); // Play beep for valid scan
+
+    // Re-enable scanning after 2 seconds
+    setTimeout(() => {
+      setScanning(true);
+      lastScannedRef.current = null; // Clear the last scanned barcode
+    }, 2000);
+  };
 
   return (
     <div className="flex p-4 w-full flex-col">
       <div className="flex justify-end w-full">
         <button
-          className="bg-blue-500 hover:bg-blue-700 text-white font-bold py-2 px-4 rounded"
+          className="bg-blue-500 hover:bg-blue-300 text-white font-bold py-2 px-4 rounded w-full"
           onClick={addItem}
         >
-          Add items
+          Start Scanning
         </button>
+        {/* <button onClick={playBeep}>Play Beep</button> */}
       </div>
 
       {addItemState && (
@@ -54,9 +125,8 @@ export default function Home() {
             width={500}
             height={500}
             onUpdate={(err, result) => {
-              if (result) {
-                setData(result.text);
-                fetchProductDetails(result.text);
+              if (result && scanning) {
+                handleScan(result.text);
               } else {
                 setData("Not Found");
               }
@@ -68,116 +138,41 @@ export default function Home() {
               <h3>Product Details:</h3>
               <p>Name: {productInfo.product_name}</p>
               <p>Brand: {productInfo.brands}</p>
-              <label htmlFor="expiryDate">Expiry Date: </label>
-              <DatePicker
-                selected={expiryDate} // This should be a state variable you define
-                onChange={(date) => setExpiryDate(date)} // Update the state with the new date
+              {/* <label htmlFor="expiryDate">Expiry Date: </label> */}
+              {/* <DatePicker
+                selected={expiryDate}
+                onChange={(date) => setExpiryDate(date)}
                 dateFormat="MMMM d, yyyy"
                 className="input"
-              />
-              <button>
-              Button
-            </button>
+              /> */}
+              {/* <button>Button</button> */}
             </div>
-            
           )}
+          <h3>Scanned Items:</h3>
+          <ul>
+            {scannedItems.map((item, index) => (
+              <li key={index} className='flex justify-between items-center mb-2'>
+                <span>
+                  {item.barcode} - {item.product?.product_name || "Unknown Product"}
+                </span>
+                
+                <button
+                  className="bg-red-500 hover:bg-red-700 text-white font-bold py-1 px-2 rounded"
+                  onClick={() => deleteItem(index)}
+                >
+                  Delete
+                </button>
+              </li>
+            ))}
+          </ul>
+          <button onClick={checkoutItem} className="bg-green-500 hover:bg-green-700 text-white font-bold py-2 px-4 rounded">Checkout</button>
         </div>
       )}
     </div>
-    // <div className="grid grid-rows-[20px_1fr_20px] items-center justify-items-center min-h-screen p-8 pb-20 gap-16 sm:p-20 font-[family-name:var(--font-geist-sans)]">
-    //   <main className="flex flex-col gap-8 row-start-2 items-center sm:items-start">
-    //     <Image
-    //       className="dark:invert"
-    //       src="/next.svg"
-    //       alt="Next.js logo"
-    //       width={180}
-    //       height={38}
-    //       priority
-    //     />
-    //     <ol className="list-inside list-decimal text-sm text-center sm:text-left font-[family-name:var(--font-geist-mono)]">
-    //       <li className="mb-2">
-    //         Get started by editing{" "}
-    //         <code className="bg-black/[.05] dark:bg-white/[.06] px-1 py-0.5 rounded font-semibold">
-    //           src/app/page.tsx
-    //         </code>
-    //         .
-    //       </li>
-    //       <li>Save and see your changes instantly.</li>
-    //     </ol>
-
-    //     <div className="flex gap-4 items-center flex-col sm:flex-row">
-    //       <a
-    //         className="rounded-full border border-solid border-transparent transition-colors flex items-center justify-center bg-foreground text-background gap-2 hover:bg-[#383838] dark:hover:bg-[#ccc] text-sm sm:text-base h-10 sm:h-12 px-4 sm:px-5"
-    //         href="https://vercel.com/new?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-    //         target="_blank"
-    //         rel="noopener noreferrer"
-    //       >
-    //         <Image
-    //           className="dark:invert"
-    //           src="/vercel.svg"
-    //           alt="Vercel logomark"
-    //           width={20}
-    //           height={20}
-    //         />
-    //         Deploy now
-    //       </a>
-    //       <a
-    //         className="rounded-full border border-solid border-black/[.08] dark:border-white/[.145] transition-colors flex items-center justify-center hover:bg-[#f2f2f2] dark:hover:bg-[#1a1a1a] hover:border-transparent text-sm sm:text-base h-10 sm:h-12 px-4 sm:px-5 sm:min-w-44"
-    //         href="https://nextjs.org/docs?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-    //         target="_blank"
-    //         rel="noopener noreferrer"
-    //       >
-    //         Read our docs
-    //       </a>
-    //     </div>
-    //   </main>
-    //   <footer className="row-start-3 flex gap-6 flex-wrap items-center justify-center">
-    //     <a
-    //       className="flex items-center gap-2 hover:underline hover:underline-offset-4"
-    //       href="https://nextjs.org/learn?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-    //       target="_blank"
-    //       rel="noopener noreferrer"
-    //     >
-    //       <Image
-    //         aria-hidden
-    //         src="/file.svg"
-    //         alt="File icon"
-    //         width={16}
-    //         height={16}
-    //       />
-    //       Learn
-    //     </a>
-    //     <a
-    //       className="flex items-center gap-2 hover:underline hover:underline-offset-4"
-    //       href="https://vercel.com/templates?framework=next.js&utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-    //       target="_blank"
-    //       rel="noopener noreferrer"
-    //     >
-    //       <Image
-    //         aria-hidden
-    //         src="/window.svg"
-    //         alt="Window icon"
-    //         width={16}
-    //         height={16}
-    //       />
-    //       Examples
-    //     </a>
-    //     <a
-    //       className="flex items-center gap-2 hover:underline hover:underline-offset-4"
-    //       href="https://nextjs.org?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-    //       target="_blank"
-    //       rel="noopener noreferrer"
-    //     >
-    //       <Image
-    //         aria-hidden
-    //         src="/globe.svg"
-    //         alt="Globe icon"
-    //         width={16}
-    //         height={16}
-    //       />
-    //       Go to nextjs.org →
-    //     </a>
-    //   </footer>
-    // </div>
   );
 }
+
+
+
+
+//review and understand the code
