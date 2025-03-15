@@ -3,6 +3,7 @@ import { useState, useEffect, useRef } from "react";
 import BarcodeScannerComponent from "react-qr-barcode-scanner";
 import DatePicker from "react-datepicker";
 import "react-datepicker/dist/react-datepicker.css";
+import { IoMdLogOut } from "react-icons/io";
 
 export default function Home() {
   const [data, setData] = useState("Not Found");
@@ -76,7 +77,7 @@ export default function Home() {
     localStorage.removeItem("scannedItems"); // Clear localStorage
     setProductInfo({});
     console.log("All items have been checked out.");
-  }
+  };
 
   // Delete a specific item from the list and localStorage
   const deleteItem = (index) => {
@@ -108,71 +109,103 @@ export default function Home() {
   };
 
   return (
-    <div className="flex p-4 w-full flex-col">
-      <div className="flex justify-end w-full">
-        <button
-          className="bg-blue-500 hover:bg-blue-300 text-white font-bold py-2 px-4 rounded w-full"
-          onClick={addItem}
-        >
-          Start Scanning
-        </button>
-        {/* <button onClick={playBeep}>Play Beep</button> */}
+    <div className="flex flex-col h-screen bg-gray-100">
+      <div className="flex justify-between items-center w-full h-[80px] pl-12 pr-12 bg-[#AC1924]">
+        <div className="bg-gray-200 h-12 w-12" />
+        <div className="flex items-center justify-between bg-[#6895D2] px-4 py-1 w-28 rounded">
+          <IoMdLogOut className="text-white text-xl" />
+          <div className="text-white font-[550] text-[16px]">Logout</div>
+        </div>
       </div>
 
-      {addItemState && (
-        <div className="flex pt-4 flex-col">
-          <BarcodeScannerComponent
-            width={500}
-            height={500}
-            onUpdate={(err, result) => {
-              if (result && scanning) {
-                handleScan(result.text);
-              } else {
-                setData("Not Found");
-              }
-            }}
-          />
-          <p>{data}</p>
-          {Object.keys(productInfo).length > 0 && (
-            <div>
-              <h3>Product Details:</h3>
-              <p>Name: {productInfo.product_name}</p>
-              <p>Brand: {productInfo.brands}</p>
-              {/* <label htmlFor="expiryDate">Expiry Date: </label> */}
-              {/* <DatePicker
-                selected={expiryDate}
-                onChange={(date) => setExpiryDate(date)}
-                dateFormat="MMMM d, yyyy"
-                className="input"
-              /> */}
-              {/* <button>Button</button> */}
-            </div>
-          )}
-          <h3>Scanned Items:</h3>
-          <ul>
-            {scannedItems.map((item, index) => (
-              <li key={index} className='flex justify-between items-center mb-2'>
-                <span>
-                  {item.barcode} - {item.product?.product_name || "Unknown Product"}
-                </span>
-                
-                <button
-                  className="bg-red-500 hover:bg-red-700 text-white font-bold py-1 px-2 rounded"
-                  onClick={() => deleteItem(index)}
-                >
-                  Delete
-                </button>
-              </li>
-            ))}
-          </ul>
-          <button onClick={checkoutItem} className="bg-green-500 hover:bg-green-700 text-white font-bold py-2 px-4 rounded">Checkout</button>
+      <div className="flex px-6 flex-col flex-grow">
+        <div className="flex py-4 text-gray-500">
+          Home /{" "}
+          <span className="font-bold mx-1.5 text-black">
+            [New] Barcode Scanner
+          </span>
         </div>
-      )}
+        <div className="flex bg-white rounded-[5px] h-full p-4">
+          <div className="w-1/2 p-2">
+            <button
+              onClick={checkoutItem}
+              className="bg-[#19ac40] hover:bg-green-700 text-white font-bold py-2 px-4 rounded w-full"
+            >
+              Checkout
+            </button>
+            <div className="flex flex-col py-4">
+              <div>
+                {Object.keys(productInfo).length > 0 && (
+                  <div className='mb-2'>
+                    <div className="font-bold">Previous Product Details:</div>
+                    {/* <p>{data}</p> */}
+                    <p>Name: {productInfo.product_name}</p>
+                    <p>Brand: {productInfo.brands}</p>
+                  </div>
+                )}
+              </div>
+              <div>
+                <div className="font-bold">Scanned Items:</div>
+                <ul>
+                  {scannedItems.map((item, index) => (
+                    <li
+                      key={index}
+                      className="flex justify-between items-center mb-2"
+                    >
+                      <span>
+                        {item.barcode} -{" "}
+                        {item.product?.product_name || "Unknown Product"}
+                      </span>
+
+                      <button
+                        className="bg-[#AC1924] hover:bg-red-800 text-white font-bold py-1 px-2 rounded"
+                        onClick={() => deleteItem(index)}
+                      >
+                        Delete
+                      </button>
+                    </li>
+                  ))}
+                </ul>
+              </div>
+            </div>
+          </div>
+          <div className="w-1/2 p-2">
+            <div className="flex w-full flex-col">
+              <div className="flex justify-end w-full">
+                <button
+                  className="bg-[#6895D2] hover:bg-blue-200 text-white font-bold py-2 px-4 rounded w-full"
+                  onClick={addItem}
+                >
+                  {addItemState ? "Stop Scanning" : "Start Scanning"}
+                </button>
+                {/* <button onClick={playBeep}>Play Beep</button> */}
+              </div>
+
+              {addItemState && (
+                <div className="flex pt-4 flex-col">
+                  <BarcodeScannerComponent
+                    width="full"
+                    // height= {30}
+                    onUpdate={(err, result) => {
+                      if (result && scanning) {
+                        handleScan(result.text);
+                      } else {
+                        setData("Product Not Found");
+                      }
+                    }}
+                  />
+                </div>
+              )}
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div className="flex w-full justify-center py-4">
+        Pettle System © 2025 Created by Pettle Co Ltd
+      </div>
     </div>
   );
 }
-
-
-
 
 //review and understand the code
