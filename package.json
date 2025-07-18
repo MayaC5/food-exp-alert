@@ -10,8 +10,10 @@
     "run": "HTTPS=true react-scripts start"
   },
   "dependencies": {
+    "@supabase/supabase-js": "^2.52.0",
     "axios": "^1.7.9",
     "javascript-barcode-reader": "^0.6.9",
+    "jwt-decode": "^4.0.0",
     "next": "15.1.4",
     "play-sound": "^1.1.6",
     "react": "^18.3.1",
@@ -19,7 +21,8 @@
     "react-datepicker": "^7.6.0",
     "react-dom": "^18.2.0",
     "react-icons": "^5.5.0",
-    "react-qr-barcode-scanner": "^2.0.0"
+    "react-qr-barcode-scanner": "^2.0.0",
+    "supabase": "^2.31.4"
   },
   "devDependencies": {
     "@eslint/eslintrc": "^3",

@@ -1,36 +1,99 @@
-This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).
+# 🥫 Food Expiry Tracker App
 
-## Getting Started
+A simple web app to log purchased food items and track their expiry dates. Users can scan barcodes, add food info, and view upcoming expirations in list and calendar formats.
 
-First, run the development server:
+---
 
-```bash
-npm run dev
-# or
-yarn dev
-# or
-pnpm dev
-# or
-bun dev
-```
+## ✨ Features
 
-Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
+- ✅ User login & authentication
+- 📦 Add food items with expiry dates
+  - Scan barcode (EAN)
+  - Fetch item details via food API
+  - Manually enter if not found
+- 📅 View food items
+  - List view sorted by expiration
+  - Calendar view
 
-You can start editing the page by modifying `app/page.tsx`. The page auto-updates as you edit the file.
+---
 
-This project uses [`next/font`](https://nextjs.org/docs/app/building-your-application/optimizing/fonts) to automatically optimize and load [Geist](https://vercel.com/font), a new font family for Vercel.
+## 🧱 Database Schema
 
-## Learn More
+### `users`
 
-To learn more about Next.js, take a look at the following resources:
+| Column      | Type    | Description              |
+|-------------|---------|--------------------------|
+| userId      | varchar | Primary key              |
+| name        | varchar | User’s full name         |
+| email       | varchar | Email address            |
+| password    | varchar | Hashed password          |
+| created_at  | date    | Date user registered     |
 
-- [Next.js Documentation](https://nextjs.org/docs) - learn about Next.js features and API.
-- [Learn Next.js](https://nextjs.org/learn) - an interactive Next.js tutorial.
+---
 
-You can check out [the Next.js GitHub repository](https://github.com/vercel/next.js) - your feedback and contributions are welcome!
+### `food_items`
 
-## Deploy on Vercel
+| Column        | Type    | Description                          |
+|---------------|---------|--------------------------------------|
+| foodId        | varchar | Primary key                          |
+| name          | varchar | Food name                            |
+| quantity      | int     | Quantity purchased                   |
+| purchase_date | date    | When the food was bought             |
+| exp_date      | date    | Expiry date                          |
+| ean           | varchar | Barcode / EAN (optional)             |
+| brand         | varchar | Brand name                           |
+| price         | number  | Purchase cost                        |
+| manual_entry  | boolean | Whether it was manually entered      |
+| userId        | varchar | Foreign key → users.userId           |
 
-The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
+---
 
-Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/building-your-application/deploying) for more details.
+## 📄 Pages & Flow
+
+### 🔐 Login Page
+- Login using email + password.
+- Auth token/session stored locally.
+
+### 📄 View Items Page
+- Shows upcoming expired items:
+  - **List View**
+  - **Calendar View**
+- Sort by expiry date
+- (Future: filtering and grouping)
+
+### ➕ Add Item Page
+- Scan EAN with device camera
+- If found in food API → pre-fill form
+- If not found → user fills in:
+  - Food name
+  - Quantity
+  - Purchase date
+  - Expiry date
+  - Price
+  - Brand
+
+---
+
+## 🧰 Tech Stack
+
+| Layer       | Tech                             |
+|-------------|----------------------------------|
+| Framework   | React + Next.js                  |
+| Styling     | Tailwind CSS or styled-components |
+| Date Utils  | `date-fns` or `dayjs`            |
+| Barcode     | `react-qr-barcode-scanner` |
+| Calendar    | `react-calendar` or `FullCalendar` |
+| State Mgmt  | React Context / Zustand (optional) |
+
+---
+
+## ☁️ Online Database Options 
+
+Since this app is frontend-only, choose a cloud-hosted database with client SDK:
+
+| Service       | Type        | Notes                                           |
+|---------------|-------------|-------------------------------------------------|
+| **Supabase**  | PostgreSQL  | Free tier, full auth, REST & client SDK support |
+
+
+
