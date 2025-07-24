@@ -64,12 +64,14 @@ export default function AddFoodPage() {
   };
 
   const handleSubmit = async () => {
-    const token = localStorage.getItem("token");
-    if (!token) return;
+    const userId = localStorage.getItem("userId");
+    if (!userId) return;
 
     try {
-      const decoded = jwtDecode(token);
-      const userId = decoded.userId;
+      if (scannedItems.length === 0) {
+        alert("No items to submit.");
+        return;
+      }
 
       for (const item of scannedItems) {
         const product = item.product;

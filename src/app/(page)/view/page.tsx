@@ -2,7 +2,7 @@
 
 import { useEffect, useState } from 'react';
 import { useRouter } from 'next/navigation';
-import jwtDecode from 'jwt-decode';
+import {jwtDecode} from 'jwt-decode';
 import { supabase } from '@/lib/supabase';
 import Calendar from 'react-calendar'; // You need to install this or another calendar lib
 import 'react-calendar/dist/Calendar.css';
@@ -14,19 +14,20 @@ export default function ViewPage() {
   const router = useRouter();
 
   useEffect(() => {
-    const token = localStorage.getItem('token');
-    if (!token) {
-      router.replace('/login');
-      return;
-    }
+    // const token = localStorage.getItem('token');
+    // if (!token) {
+    //   router.replace('/login');
+    //   return;
+    // }
 
     const fetchData = async () => {
       try {
-        const decoded = jwtDecode(token);
+        const userId = localStorage.getItem('userId');
+        console.log(userId);
         const { data, error } = await supabase
           .from('food_items')
           .select('*')
-          .eq('userId', decoded.userId)
+          .eq('userId', userId)
           .order('exp_date', { ascending: true });
 
         if (error) throw new Error(error.message);

@@ -9,11 +9,10 @@ export default function Home() {
   useEffect(() => {
     const token = localStorage.getItem('token');
     if (token) {
-      router.replace('/view');
+      return router.replace('/view');
     } else {
-      router.replace('/(login)');
+      return router.replace('/login');
     }
   }, [router]);
 
-  return <p>Redirecting...</p>;
 }

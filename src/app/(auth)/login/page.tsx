@@ -2,36 +2,40 @@
 
 import { useState } from 'react';
 import { useRouter } from 'next/navigation';
+import { supabase } from '@/lib/supabase';
+
+import bcrypt from 'bcryptjs';
+import { jwtDecode } from 'jwt-decode';
 
 export default function LoginPage() {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
+  const [error, setError] = useState('');
   const router = useRouter();
 
   async function handleLogin(e: React.FormEvent) {
     e.preventDefault();
 
-    const res = await fetch('/api/login', {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-      },
-      body: JSON.stringify({ email, password }),
-    });
 
-    const data = await res.json();
+    const {data: user} = await supabase
+            .from('users')
+            .select('*')
+            .eq('email', email)
+            .single();
 
-    if (res.ok) {
-      localStorage.setItem('token', data.token);
+    const isPasswordValid = await bcrypt.compare(password, user.password);
+
+    if (isPasswordValid) {
+      localStorage.setItem('userId', user.userId);
       router.push('/view');
     } else {
-      alert(data.error || 'Login failed');
+      alert(error || 'Login failed');
     }
   }
 
   return (
-    <div className="max-w-md mx-auto p-6">
-      <h1 className="text-2xl font-bold mb-4">Login</h1>
+    <div className="flex flex-col max-w-md mx-auto p-6 justify-center h-screen">
+      <div className="text-2xl font-bold mb-4">Login</div>
 
       <form onSubmit={handleLogin} className="flex flex-col space-y-3">
         <input
